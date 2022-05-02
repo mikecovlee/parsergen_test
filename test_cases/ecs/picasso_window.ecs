@@ -1,0 +1,136 @@
+package picasso_window
+
+import picasso_base as base
+import imgui, regex
+
+struct message_box extends base.simple_window
+    var message = new string
+    function construct(msg : string)
+        message = msg
+    end
+    function on_draw() override
+        imgui.text(message)
+        imgui.spacing()
+        if imgui.button("OK") || imgui.is_key_pressed(imgui.get_key_index(imgui.keys.enter))
+            this.on_close.activate(this)
+            this.win_opened = false
+        end
+    end
+end
+
+struct question_box extends base.simple_window
+    var question = new string
+    var yes_str = "Yes"
+    var no_str = "No"
+    function construct(...args)
+        switch args.size
+            case 1
+                question = args[0]
+            end
+            case 3
+                question = args[0]
+                yes_str = args[1]
+                no_str = args[2]
+            end
+        end
+    end
+    function on_draw() override
+        imgui.text(question)
+        imgui.spacing()
+        if imgui.button(yes_str) || imgui.is_key_pressed(to_integer('Y'))
+            this.on_close.activate(this, true)
+            this.win_opened = false
+        end
+        imgui.same_line()
+        if imgui.button(no_str) || imgui.is_key_pressed(to_integer('N'))
+            this.on_close.activate(this, false)
+            this.win_opened = false
+        end
+    end
+end
+
+struct file_explorer extends base.simple_window
+    var path = "."
+    var message = new string
+    var filters = {}
+    var path_info = null
+    var path_name = null
+    var selected = 0
+    function construct(msg : string, p : string, files : array)
+        message = msg
+        path = p
+        filters = files
+    end
+    function read_path()
+        if path[path.size-1] != system.path.separator
+            path += system.path.separator
+        end
+        path_info = new array
+        path_name = new array
+        var info = system.path.scan(path)
+        var regs = new array
+        var files = new array
+        foreach it in filters
+            regs.push_back(regex.build(it))
+        end
+        foreach it in info
+            if it.type==system.path.type.dir
+                path_info.push_back(it)
+            else
+                foreach reg in regs
+                    if !reg.match(it.name).empty()
+                        files.push_back(it)
+                    end
+                end
+            end
+        end
+        foreach it in files
+            path_info.push_back(it)
+        end
+        foreach it in path_info
+            if it.type == system.path.type.dir
+                path_name.push_back(to_string(system.path.separator) + it.name)
+            else
+                path_name.push_back(it.name)
+            end
+        end
+    end
+    function on_draw() override
+        imgui.text(message)
+        imgui.separator()
+        imgui.list_box("##dir_list", selected, path_name)
+        var info = path_info.at(selected)
+        if imgui.begin_popup_item("dir_list")
+            if imgui.menu_item("Enter", "", info.type == system.path.type.dir)
+                path += info.name
+                read_path()
+                selected = 0
+            end
+            if imgui.menu_item("Select", "", info.type != system.path.type.dir)
+                this.on_close.activate(this, path + info.name)
+                this.win_opened = false
+            end
+            imgui.end_popup()
+        end
+        if imgui.is_item_hovered() && imgui.is_mouse_double_clicked(0)
+            if info.type == system.path.type.dir
+                path += info.name
+                read_path()
+                selected = 0
+            else
+                this.on_close.activate(this, path + info.name)
+                this.win_opened = false
+            end
+        end
+        imgui.separator()
+        if imgui.menu_item("Select", "", info.type != system.path.type.dir)
+            this.on_close.activate(this, path + info.name)
+            this.win_opened = false
+        end
+        imgui.separator()
+        if imgui.menu_item("Cancel", "", true)
+            this.on_close.activate(this, null)
+            this.win_opened = false
+        end
+    end
+end

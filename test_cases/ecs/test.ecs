@@ -1,0 +1,62 @@
+@require: 210602
+@charset: utf8
+
+import picasso as ui
+import imgui, imgui_font
+
+var app = new ui.application {
+    imgui.window_application(640, 400, "Picasso UI Test")
+}
+
+var font = imgui.add_font_extend_cn(imgui_font.source_han_sans, 18)
+
+block
+    var win = app.add_activity(ui.activities.single_page, "main1")->window
+    win->add_view(app.make_view(ui.widgets.text, "text"))
+    win->add_view(app.make_view(ui.widgets.input, "input"))
+    win->add_view(app.make_view(ui.widgets.button, "btn", {"打开Activity 2"}))
+    app.views.main1->font = global.font
+    app.views.main1->on_focus.add_listener([](obj, txt){
+        imgui.style_color_dark()
+        obj.window->views.input->text += txt
+    })
+    win->views.input->on_render.add_listener([win](txt){
+        win->views.text->text = "输入：" + txt
+    })
+    win->views.btn->on_click.add_listener([win, app](obj){
+        app.push("main2", win->views.input->text)
+    })
+end
+
+block
+    var win = app.add_activity(ui.activities.single_page, "main2")->window
+    win->add_view(app.make_view(ui.widgets.text, "text"))
+    win->add_view(app.make_view(ui.widgets.input, "input"))
+    win->add_view(app.make_view(ui.widgets.button, "btn", {"关闭Activity 2"}))
+    app.views.main2->font = global.font
+    app.views.main2->on_focus.add_listener([win](obj, arg){
+        if arg is string
+            imgui.style_color_light()
+            win->views.text->text = "来自Activity 1：" + arg
+            win->views.input->text = new string
+        else if arg is boolean
+            if arg
+                app.pop(win->views.input->text)
+            end
+        end
+    })
+    win->views.btn->on_click.add_listener([app, win](obj){
+        app.push("main3")
+    })
+end
+
+block
+    var win = app.add_activity(ui.activities.single_page, "main3", {ui.windows.question_box, {"返回Activity 1？", "确定(Y)", "取消(N)"}})->window
+    app.views.main3->font = global.font
+    win->on_close.add_listener([](obj, val){
+        app.pop(val)
+    })
+end
+
+app.push("main1", "你好世界！")
+app.start()
