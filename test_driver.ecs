@@ -125,6 +125,7 @@ function run_path(path, pass)
         avg_unpredicted_time = avg_unpredicted_time/pass
         avg_unpredicted_reject_count = avg_unpredicted_reject_count/pass
         system.out.println("Unpredicted Average:\tTime = " + avg_unpredicted_time + ", Count = " + avg_unpredicted_reject_count)
+        system.out.println("Execution Time: " + math.abs(avg_unpredicted_time - avg_predicted_time)/avg_unpredicted_time*100 + "%, Prediction Accuracy: " + math.abs(avg_unpredicted_reject_count - avg_predicted_reject_count)/avg_unpredicted_reject_count*100 + "%")
     end
 end
 
