@@ -129,8 +129,8 @@ function run_path(path, pass)
 end
 
 var target_path = {
-    #"./test_cases/ecs",
-    "./test_cases/json"
+    "./test_cases/ecs"
+    #"./test_cases/json"
 }
 
 foreach it in target_path do run_path(it, 5)

@@ -1,5 +1,5 @@
-# Covariant Script Parser Generator v1.2.4 Release
-# Release Date: Sun Apr 24 15:32:29 2022
+# Covariant Script Parser Generator v1.2.5 Release
+# Release Date: Wed May 04 09:38:31 2022
 # Copyright (C) 2017-2022 Michael Lee(李登淳)
 # Github:  https://github.com/mikecovlee
 
@@ -332,10 +332,7 @@ class parser_type
         if eof()
             return parse_state.eof
         end
-        if !enable_predict
-            return parse_state.accept
-        end
-        if set != null && !set.empty()
+        if enable_predict && set != null && !set.empty()
             link token = peek()
             if set.data_set.exist(token.data) || set.type_set.exist(token.type)
                 return parse_state.accept
@@ -458,7 +455,7 @@ class parser_type
                         end
                         case parse_state.eof
                             pop_stage()
-                            return parse_state.eof
+                            return parse_state.accept
                         end
                     end
                 end
@@ -486,7 +483,7 @@ class parser_type
                     end
                     case parse_state.eof
                         pop_stage()
-                        return parse_state.eof
+                        return parse_state.accept
                     end
                 end
             end
@@ -715,7 +712,7 @@ class generator
                 end
                 print_error(file_path, code_buff, lexer.error_log)
                 if stop_on_error
-                    return
+                    return false
                 end
             end
             parser = new parser_type
@@ -734,8 +731,9 @@ class generator
                 print_error(file_path, code_buff, err)
                 return false
             end
+        else
+            return false
         end
-        return false
     end
     function add_grammar(lang, gram)
         rules[lang] = gram
@@ -769,6 +767,6 @@ class generator
     function from_string(lang, str)
         input = str
         code_buff = input.split({'\n'})
-        priv_run(lang)
+        return priv_run(lang)
     end
 end
