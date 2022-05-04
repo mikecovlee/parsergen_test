@@ -58,6 +58,9 @@ function compress_ast(n)
     end
 end
 
+var err = iostream.ofstream("./error.log")
+var res = iostream.ofstream("./result.csv")
+
 function run_once(file, enable_predict, output_ast)
     parsergen.enable_predict = enable_predict
     parsergen.reject_count = 0
@@ -97,11 +100,14 @@ function run_path(path, pass)
         end
         var file_name = path + "/" + it.name
         system.out.println("(" + count + "/" + info.size + ") Testing \"" + file_name + "\"...")
+        # Predicted
         var avg_predicted_time = 0, avg_predicted_reject_count = 0
         foreach i in range(pass)
-            var (time, count) = run_once(file_name, true, false)
+            link ret = run_once(file_name, true, false)
+            link time = ret[0], count = ret[1]
             if time == null || count == null
                 system.out.println("\tError, stop.")
+                err.println(file_name)
                 break
             end
             system.out.println("\tIn predicted pass " + (i + 1) + ":\tTime = " + time + ", Count = " + count)
@@ -111,11 +117,14 @@ function run_path(path, pass)
         avg_predicted_time = avg_predicted_time/pass
         avg_predicted_reject_count = avg_predicted_reject_count/pass
         system.out.println("Predicted Average:\tTime = " + avg_predicted_time + ", Count = " + avg_predicted_reject_count)
+        # Unpredicted
         var avg_unpredicted_time = 0, avg_unpredicted_reject_count = 0
         foreach i in range(pass)
-            var (time, count) = run_once(file_name, false, false)
+            link ret = run_once(file_name, false, false)
+            link time = ret[0], count = ret[1]
             if time == null || count == null
                 system.out.println("\tError, stop.")
+                err.println(file_name)
                 break
             end
             system.out.println("\tIn unpredicted pass " + (i + 1) + ":\tTime = " + time + ", Count = " + count)
@@ -125,7 +134,11 @@ function run_path(path, pass)
         avg_unpredicted_time = avg_unpredicted_time/pass
         avg_unpredicted_reject_count = avg_unpredicted_reject_count/pass
         system.out.println("Unpredicted Average:\tTime = " + avg_unpredicted_time + ", Count = " + avg_unpredicted_reject_count)
-        system.out.println("Execution Time: " + math.abs(avg_unpredicted_time - avg_predicted_time)/avg_unpredicted_time*100 + "%, Prediction Accuracy: " + math.abs(avg_unpredicted_reject_count - avg_predicted_reject_count)/avg_unpredicted_reject_count*100 + "%")
+        # Summary
+        var tperc = math.abs(avg_unpredicted_time - avg_predicted_time)/avg_unpredicted_time*100
+        var accup = math.abs(avg_unpredicted_reject_count - avg_predicted_reject_count)/avg_unpredicted_reject_count*100
+        res.println(to_string(tperc) + ", " + accup + ", ")
+        system.out.println("Execution Time: " + tperc + "%, Prediction Accuracy: " + accup + "%")
     end
 end
 
