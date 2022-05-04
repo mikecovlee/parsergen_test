@@ -142,9 +142,4 @@ function run_path(path, pass)
     end
 end
 
-var target_path = {
-    "./test_cases/ecs"
-    #"./test_cases/json"
-}
-
-foreach it in target_path do run_path(it, 5)
+run_path(context.cmd_args[1], 5)

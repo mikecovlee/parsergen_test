@@ -1,2 +1,4 @@
 .ecs_output/
 *.txt
+error.log
+result.csv
